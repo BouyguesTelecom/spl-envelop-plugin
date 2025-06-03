@@ -1,0 +1,24 @@
+{
+  "name": "@bouygues-telecom/spl-envelop-plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "author": "Bouygues Telecom",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BouyguesTelecom/spl-envelop-plugin.git"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@bouygues-telecom/spl": "^0.1.16",
+    "@envelop/core": "^5.2.3",
+    "graphql": "^16.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.8.3"
+  }
+}
