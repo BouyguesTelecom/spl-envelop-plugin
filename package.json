@@ -13,6 +13,7 @@
     "src"
   ],
   "scripts": {
+    "build": "tsc",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
