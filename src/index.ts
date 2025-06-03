@@ -10,7 +10,7 @@ import {
   type StringValueNode,
   visit,
 } from 'graphql'
-import { getPath, setPath } from './utils'
+import { getPath, setPath } from './utils.js'
 
 /**
  * Defines the SPL (Simple Processing Language) directive type for GraphQL.
