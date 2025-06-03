@@ -8,6 +8,13 @@
     "type": "git",
     "url": "git+https://github.com/BouyguesTelecom/spl-envelop-plugin.git"
   },
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
     "src"
