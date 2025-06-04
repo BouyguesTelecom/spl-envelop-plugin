@@ -33,5 +33,9 @@
   "devDependencies": {
     "@types/node": "^20.11.19",
     "typescript": "^5.8.3"
+  },
+  "peerDependency": {
+    "@envelop/core": "^5.2.3",
+    "graphql": "^16.11.0"
   }
 }
