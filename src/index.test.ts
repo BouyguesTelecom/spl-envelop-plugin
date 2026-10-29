@@ -25,7 +25,7 @@ describe('SPL Plugin', () => {
 
   it('exports SPL directive definition', () => {
     expect(splDirectiveTypeDef).toContain('directive @SPL')
-    expect(splDirectiveTypeDef).toContain('on FIELD')
+    expect(splDirectiveTypeDef).toContain('repeatable on FIELD')
   })
 
   it('exports useSPL plugin function', () => {
