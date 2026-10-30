@@ -29,7 +29,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@bouygues-telecom/spl": "^0.1.16",
+    "@bouygues-telecom/spl": "^0.1.17",
     "@envelop/core": "^5.2.3",
     "graphql": "^16.11.0"
   },
