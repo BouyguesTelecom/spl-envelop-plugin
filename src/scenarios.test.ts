@@ -273,6 +273,25 @@ describe('plugin behaviour', () => {
     ])
   })
 
+  it('leaves a value that is neither a list nor an envelope untouched', async () => {
+    // `shelving` resolves to a plain object. There is nothing to filter, so the data must come
+    // back exactly as the resolvers produced it.
+    const result = await run(/* GraphQL */ `
+      {
+        catalogue(id: "C1") {
+          shelving @SPL(query: "rating = '5'") {
+            shelves {
+              id
+            }
+          }
+        }
+      }
+    `)
+
+    expect(result.errors).toBeUndefined()
+    expect((result.data?.catalogue as any).shelving).toEqual({ shelves: [{ id: 'S1' }] })
+  })
+
   it('leaves the result untouched when there is no @SPL directive', async () => {
     const result = await run(/* GraphQL */ `
       {

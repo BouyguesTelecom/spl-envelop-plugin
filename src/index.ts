@@ -57,7 +57,33 @@ const runSplFilter = (
   )
 
 /**
- * Applies a SPL query to the value held by an annotated field.
+ * What a single directive did, accumulated across every location it reached.
+ *
+ * A directive sitting under a list is applied once per element, so reporting each application
+ * would mean one log line per element. The counts are gathered here and reported once.
+ */
+interface ApplyTally {
+  /** Values that were actually filtered. */
+  filtered: number
+  /** Items seen across those values, before and after filtering. */
+  before: number
+  after: number
+  /** Values left untouched because they were neither a list nor an `{ items }` envelope. */
+  skipped: number
+  /** The kinds of those untouched values, for a single actionable warning. */
+  skippedKinds: Set<string>
+}
+
+const newTally = (): ApplyTally => ({
+  filtered: 0,
+  before: 0,
+  after: 0,
+  skipped: 0,
+  skippedKinds: new Set(),
+})
+
+/**
+ * Applies a SPL query to the value held by an annotated field, recording what it did in `tally`.
  *
  * Both shapes the directive can be placed on are supported: a bare list, and the
  * `{ items: [...] }` wrapper, whose `items` are filtered while the rest of the envelope is kept.
@@ -67,30 +93,27 @@ const applySplToValue = (
   value: unknown,
   query: string,
   variables: Record<string, unknown>,
-  pathLabel: string,
+  tally: ApplyTally,
 ): unknown => {
   if (Array.isArray(value)) {
     const filtered = runSplFilter(query, value, variables)
-    console.debug(
-      `SPL filtering applied successfully: ${value.length} -> ${filtered.length} items at path "${pathLabel}"`,
-    )
+    tally.filtered += 1
+    tally.before += value.length
+    tally.after += filtered.length
     return filtered
   }
 
   if (value !== null && typeof value === 'object' && Array.isArray((value as any).items)) {
     const wrapper = value as { items: unknown[] }
     const filtered = runSplFilter(query, wrapper.items, variables)
-    console.debug(
-      `SPL filtering applied successfully: ${wrapper.items.length} -> ${filtered.length} items at path "${pathLabel}.items"`,
-    )
+    tally.filtered += 1
+    tally.before += wrapper.items.length
+    tally.after += filtered.length
     return { ...wrapper, items: filtered }
   }
 
-  console.warn(
-    `@SPL directive on field "${pathLabel}" was ignored because the resolved value is neither a list nor an { items } wrapper. Got: ${
-      value === null ? 'null' : typeof value
-    }`,
-  )
+  tally.skipped += 1
+  tally.skippedKinds.add(value === null ? 'null' : typeof value)
   return value
 }
 
@@ -136,10 +159,10 @@ export const useSPL = (): Plugin => ({
           // Each occurrence is isolated: one failing on an unexpected tree shape must neither
           // break the others nor the GraphQL response.
           try {
-            console.debug(`Applying SPL query "${occurrence.query}" at path "${pathLabel}"`)
+            const tally = newTally()
 
             const applied = updateAtPath(transformedData, occurrence.path, (value) =>
-              applySplToValue(value, occurrence.query, variables, pathLabel),
+              applySplToValue(value, occurrence.query, variables, tally),
             )
 
             if (applied === 0) {
@@ -149,7 +172,21 @@ export const useSPL = (): Plugin => ({
               continue
             }
 
-            hasChanges = true
+            // One line per directive, not per element: under a list the callback above runs once
+            // for every element, and logging there would scale with the size of the data.
+            console.debug(
+              `Applied SPL query "${occurrence.query}" at path "${pathLabel}": ` +
+                `${tally.filtered} value(s) filtered, ${tally.before} -> ${tally.after} items`,
+            )
+
+            if (tally.skipped > 0) {
+              console.warn(
+                `@SPL directive on field "${pathLabel}" left ${tally.skipped} value(s) untouched: ` +
+                  `neither a list nor an { items } wrapper. Got: ${[...tally.skippedKinds].join(', ')}`,
+              )
+            }
+
+            hasChanges = tally.filtered > 0 || hasChanges
           } catch (e) {
             console.error(`Error applying SPL directive to field "${pathLabel}":`, e)
             // Note: We could extend result.errors, but it's readonly in this context
